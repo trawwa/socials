@@ -1,0 +1,11 @@
+{
+    "configurations": [
+        {
+            "name": "socials",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
