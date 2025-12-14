@@ -1,6 +1,10 @@
+import base64
 import logging
 
 from aiohttp import web
+from aiohttp_session import setup
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+from cryptography import fernet
 
 from app.server_aiohttp.routes.base import setup_routes
 from config.common import BaseConfig
@@ -8,8 +12,13 @@ from config.common import BaseConfig
 
 def main():
     app = web.Application()
-    app["config"] = BaseConfig
+
+    fernet_key = fernet.Fernet.generate_key()
+    secret_key = base64.urlsafe_b64decode(fernet_key)
+    setup(app, EncryptedCookieStorage(secret_key))
+
     setup_routes(app)
+    app["config"] = BaseConfig
     logging.basicConfig(level=logging.INFO)
     web.run_app(app)
 
