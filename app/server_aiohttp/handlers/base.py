@@ -1,27 +1,39 @@
 from datetime import datetime, timezone
 
+import aiohttp_jinja2
 from aiohttp import web
 from aiohttp_session import get_session
 
 
 class Index(web.View):
 
-    async def get(self) -> web.Response:
+    @aiohttp_jinja2.template("index.html")
+    async def get(self):
         config = self.app["config"]
-        return web.Response(text=f"Welcome to the index page!\nCONFIG_TYPE: {config}\nProject Name: {config.APP_NAME}")
+        return dict(config=config)
 
 
 class Login(web.View):
 
-    async def get(self) -> web.Response | None:
+    @aiohttp_jinja2.template("login.html")
+    async def get(self):
         session = await get_session(self)
         session["last_visit"] = str(datetime.now(timezone.utc))
         last_visit = session["last_visit"]
         text = f"Last visited: {last_visit}"
-        return web.Response(text=f"Login Page\n {text}")
+        return dict(text=f"Login Page\n {text}")
 
-    async def post(self) -> web.Response:
-        return web.Response(text="Login page")
+    async def post(self):
+        data = await self.post()
+        login = data["login"]
+        password = data["password"]
+
+        session = await get_session(self)
+        session["user"] = {"login": login}
+
+        location = self.app.router["index"].url_for()
+
+        return web.HTTPFound(location=location)
 
 
 class Signup(web.View):
