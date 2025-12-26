@@ -4,4 +4,4 @@ aiohttp_jinja2
 cryptography
 jinja2
 motor
-pymongo
+psycopg2

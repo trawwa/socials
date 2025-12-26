@@ -4,6 +4,8 @@ import aiohttp_jinja2
 from aiohttp import web
 from aiohttp_session import get_session
 
+from models.user import User
+
 
 class Index(web.View):
 
@@ -20,6 +22,11 @@ class Login(web.View):
         session = await get_session(self)
         session["last_visit"] = str(datetime.now(timezone.utc))
         last_visit = session["last_visit"]
+
+        db = self.app["db"]
+        user = await User.get_user(db=db, uid=1)
+        document = await db.test.find_one()
+
         text = f"Last visited: {last_visit}"
         return dict(text=f"Login Page\n {text}")
 
