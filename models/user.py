@@ -15,7 +15,8 @@ class User:
     @staticmethod
     async def create_new_user(db: Database, data):
         email = data['email']
-        user = await db.users.find_one(
+        users_collection = db.users()
+        user = await users_collection.find_one(
             {
                 'email': email
             }

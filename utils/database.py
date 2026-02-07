@@ -83,3 +83,13 @@ class UserCollection:
         result = await self.db.fetch_one(query, *data.values())
         return result["id"]
 
+    async def find_one(self, **filters) -> dict[str, any] | None:
+        """Найти одну запись по фильтрам (аналог MongoDB find_one)"""
+        if not filters:
+            query = "SELECT * FROM users LIMIT 1"
+            return await self.db.fetch_one(query)
+
+        where_clauses = [f"{k} = ${i+1}" for i, k in enumerate(filters.keys())]
+        query = f"SELECT * FROM users WHERE {' AND '.join(where_clauses)} LIMIT 1"
+        return await self.db.fetch_one(query, *filters.values())
+
