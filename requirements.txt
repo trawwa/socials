@@ -3,5 +3,7 @@ aiohttp_session
 aiohttp_jinja2
 cryptography
 jinja2
-motor
-psycopg2
+asyncio
+asyncpg
+dotenv
+python-dotenv
