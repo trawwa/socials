@@ -56,6 +56,7 @@ def main():
 
     setup_routes(app)
     app["config"] = BaseConfig
+    app["settings"] = settings
     app.cleanup_ctx.append(init_db)
 
     logging.basicConfig(level=logging.INFO)

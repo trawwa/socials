@@ -25,7 +25,8 @@ class Login(web.View):
 
         db = self.app["db"]
         user = await User.get_user(db=db, uid=1)
-        document = await db.test.find_one()
+        # Используем коллекцию пользователей из Database
+        document = await db.users().find_one()
 
         text = f"Last visited: {last_visit}"
         return dict(text=f"Login Page\n {text}")
