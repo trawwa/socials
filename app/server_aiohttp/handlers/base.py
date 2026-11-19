@@ -1,50 +1,55 @@
+
 from datetime import datetime, timezone
 
 import aiohttp_jinja2
 from aiohttp import web
 from aiohttp_session import get_session
 
-from models.user import User
+
+async def index(request: web.Request) -> web.Response:
+    """Render the main page."""
+    return aiohttp_jinja2.render_template(
+        "index.html",
+        request,
+        {"config": request.app.get("config")},
+    )
 
 
-class Index(web.View):
+async def login(request: web.Request) -> web.Response:
+    """Render the login page and record the visit in the session."""
+    session = await get_session(request)
+    last_visit = datetime.now(timezone.utc).isoformat()
+    session["last_visit"] = last_visit
 
-    @aiohttp_jinja2.template("index.html")
-    async def get(self):
-        config = self.app["config"]
-        return dict(config=config)
-
-
-class Login(web.View):
-
-    @aiohttp_jinja2.template("login.html")
-    async def get(self):
-        session = await get_session(self)
-        session["last_visit"] = str(datetime.now(timezone.utc))
-        last_visit = session["last_visit"]
-
-        db = self.app["db"]
-        user = await User.get_user(db=db, uid=1)
-        # Используем коллекцию пользователей из Database
-        document = await db.users().find_one()
-
-        text = f"Last visited: {last_visit}"
-        return dict(text=f"Login Page\n {text}")
-
-    async def post(self):
-        data = await self.post()
-        login = data["login"]
-        password = data["password"]
-
-        session = await get_session(self)
-        session["user"] = {"login": login}
-
-        location = self.app.router["index"].url_for()
-
-        return web.HTTPFound(location=location)
+    return aiohttp_jinja2.render_template(
+        "login.html",
+        request,
+        {"text": f"Login Page\nLast visited: {last_visit}"},
+    )
 
 
-class Signup(web.View):
+async def login_post(request: web.Request) -> web.Response:
+    """Accept login form data and redirect to the main page."""
+    data = await request.post()
+    login_value = data.get("login")
+    password = data.get("password")
 
-    async def get(self) -> web.Response:
-        return web.Response(text="Signup page")
+    if not login_value or not password:
+        raise web.HTTPBadRequest(
+            text="Login and password are required"
+        )
+
+    session = await get_session(request)
+    session["user"] = {"login": str(login_value)}
+
+    raise web.HTTPFound(
+        location=request.app.router["index"].url_for()
+    )
+
+
+async def signup(request: web.Request) -> web.Response:
+    """Render a minimal signup page."""
+    return web.Response(
+        text="Signup page",
+        content_type="text/plain",
+    )
