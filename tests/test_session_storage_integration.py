@@ -1,10 +1,13 @@
 import unittest
-from http.cookies import SimpleCookie
+from datetime import datetime
 
+import aiohttp_jinja2
+import jinja2
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aiohttp_session import get_session, setup
 
+from app.server_aiohttp.handlers.base import LoginView
 from utils.session import create_session_storage
 
 
@@ -71,6 +74,42 @@ class SessionStorageIntegrationTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await response.text(), "missing")
         finally:
             await other_client.close()
+
+
+    async def test_login_view_persists_last_visit_in_session(self):
+        app = web.Application()
+        setup(app, create_session_storage("login-view-integration-secret", environment="test"))
+        aiohttp_jinja2.setup(
+            app,
+            loader=jinja2.DictLoader({"login.html": "{{ text }}"}),
+        )
+        app.router.add_view("/login", LoginView)
+
+        async def read_last_visit(request: web.Request) -> web.Response:
+            session = await get_session(request)
+            return web.Response(text=str(session.get("last_visit", "")))
+
+        app.router.add_get("/session", read_last_visit)
+
+        client = TestClient(TestServer(app))
+        await client.start_server()
+        try:
+            login_response = await client.get("/login")
+            self.assertEqual(login_response.status, 200)
+            self.assertIn("Last visited:", await login_response.text())
+            self.assertIn("AIOHTTP_SESSION", login_response.cookies)
+
+            session_response = await client.get("/session")
+            self.assertEqual(session_response.status, 200)
+            last_visit = await session_response.text()
+            self.assertTrue(last_visit)
+
+            parsed_last_visit = datetime.fromisoformat(last_visit)
+            self.assertIsNotNone(parsed_last_visit.tzinfo)
+            self.assertIsNotNone(parsed_last_visit.utcoffset())
+        finally:
+            await client.close()
+
 
 
 if __name__ == "__main__":
