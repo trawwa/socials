@@ -1,6 +1,6 @@
 import unittest
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 from utils.session import create_session_storage
 
@@ -18,7 +18,7 @@ class SessionStorageTests(unittest.TestCase):
         second = create_session_storage("second-secret", "development")
 
         token = first._fernet.encrypt(b"session-data")
-        with self.assertRaises(Exception):
+        with self.assertRaises(InvalidToken):
             second._fernet.decrypt(token)
 
     def test_production_rejects_placeholder_secret(self):
