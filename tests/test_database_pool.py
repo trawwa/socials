@@ -90,6 +90,7 @@ class DatabasePoolTests(unittest.IsolatedAsyncioTestCase):
                     max_size=4,
                 )
                 fake_db.connect.assert_awaited_once()
+                fake_db.apply_schema.assert_awaited_once()
             finally:
                 await client.close()
                 for item in reversed(settings_patch):
