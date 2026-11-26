@@ -97,6 +97,22 @@ class DatabasePoolTests(unittest.IsolatedAsyncioTestCase):
 
         fake_db.disconnect.assert_awaited_once()
 
+    @unittest.skipUnless(os.getenv("TEST_POSTGRES") == "1", "requires PostgreSQL service")
+    async def test_real_postgres_accepts_connection(self):
+        pool = await asyncpg.create_pool(
+            host=os.getenv("DB_HOST", "localhost"),
+            port=int(os.getenv("DB_PORT", "5432")),
+            database=os.getenv("DB_NAME", "social_network"),
+            user=os.getenv("DB_USER", "postgres"),
+            password=os.getenv("DB_PASSWORD", "postgres"),
+            min_size=1,
+            max_size=2,
+        )
+        try:
+            self.assertEqual(await pool.fetchval("SELECT 1"), 1)
+        finally:
+            await pool.close()
+
 
 if __name__ == "__main__":
     unittest.main()
