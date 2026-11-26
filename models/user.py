@@ -66,6 +66,34 @@ class UserModel:
                 password_hash,
             )
 
+    @staticmethod
+    async def get_by_email(db_pool, email):
+        """Return an authentication record for a normalized email address."""
+        if not isinstance(email, str) or not email.strip():
+            return None
+        async with db_pool.acquire() as connection:
+            return await connection.fetchrow(
+                """
+                SELECT id, email, first_name, last_name, password_hash, created_at
+                FROM users
+                WHERE email = $1
+                """,
+                email.strip().lower(),
+            )
+
+    @staticmethod
+    async def get_by_id(db_pool, user_id):
+        """Return a public user profile without password credentials."""
+        async with db_pool.acquire() as connection:
+            return await connection.fetchrow(
+                """
+                SELECT id, email, first_name, last_name, created_at
+                FROM users
+                WHERE id = $1
+                """,
+                user_id,
+            )
+
 
 class User:
     """Legacy compatibility facade; new registration code uses UserModel."""
