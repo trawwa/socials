@@ -38,7 +38,20 @@ class AuthenticationIntegrationTests(unittest.IsolatedAsyncioTestCase):
             session = await get_session(request)
             return web.json_response(dict(session))
 
+        async def seed_logout_session(request):
+            session = await get_session(request)
+            session["user_id"] = 42
+            session["last_visit"] = "yesterday"
+            return web.Response(text="ok")
+
+        async def seed_stale_session(request):
+            session = await get_session(request)
+            session["user_id"] = 999
+            return web.Response(text="ok")
+
         self.app.router.add_get("/test-session", session_data)
+        self.app.router.add_get("/test-seed", seed_logout_session)
+        self.app.router.add_get("/test-stale-session", seed_stale_session)
         self.client = TestClient(TestServer(self.app))
         await self.client.start_server()
 
@@ -102,13 +115,6 @@ class AuthenticationIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await (await self.client.get("/test-session")).json(), {})
 
     async def test_logout_clears_session_and_redirects_to_login(self):
-        async def seed_session(request):
-            session = await get_session(request)
-            session["user_id"] = 42
-            session["last_visit"] = "yesterday"
-            return web.Response(text="ok")
-
-        self.app.router.add_get("/test-seed", seed_session)
         await self.client.get("/test-seed")
         response = await self.client.get("/logout", allow_redirects=False)
         self.assertEqual(response.status, 302)
@@ -116,12 +122,6 @@ class AuthenticationIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await (await self.client.get("/test-session")).json(), {})
 
     async def test_context_processor_marks_anonymous_and_removes_stale_user_id(self):
-        async def seed_session(request):
-            session = await get_session(request)
-            session["user_id"] = 999
-            return web.Response(text="ok")
-
-        self.app.router.add_get("/test-stale-session", seed_session)
         with patch(
             "app.server_aiohttp.handlers.base.UserModel.get_by_id",
             new=AsyncMock(return_value=None),
