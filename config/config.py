@@ -1,14 +1,14 @@
 # config.py
 import os
+
 from dotenv import load_dotenv
 
-# Загрузка .env файла
 load_dotenv()
 
-class Settings:
-    """Конфигурация приложения"""
 
-    # Application
+class Settings:
+    """Конфигурация приложения."""
+
     APP_NAME: str = os.getenv("APP_NAME", "MyApp")
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "production")
@@ -24,8 +24,11 @@ class Settings:
 
     @property
     def DATABASE_URL(self) -> str:
-        """URL для подключения к базе данных"""
-        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        """URL для подключения к базе данных."""
+        return (
+            f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}"
+            f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        )
 
     # Server
     HOST: str = os.getenv("HOST", "0.0.0.0")
@@ -35,5 +38,4 @@ class Settings:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-in-production")
 
 
-# Глобальный экземпляр настроек
 settings = Settings()
