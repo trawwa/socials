@@ -5,7 +5,32 @@ import asyncpg
 from aiohttp import web
 from aiohttp_session import get_session
 
-from models.user import UserModel
+from models.user import UserModel, verify_password
+
+
+async def session_context_processor(request: web.Request) -> dict:
+    """Expose the authenticated user's public profile to every Jinja template."""
+    session = await get_session(request)
+    user_id = session.get("user_id")
+    current_user = None
+
+    if user_id is not None:
+        try:
+            current_user = await UserModel.get_by_id(
+                request.app["db"]._get_pool(), int(user_id)
+            )
+        except (TypeError, ValueError):
+            current_user = None
+
+        if current_user is None:
+            session.pop("user_id", None)
+        else:
+            current_user = dict(current_user)
+
+    return {
+        "current_user": current_user,
+        "is_anonymous": current_user is None,
+    }
 
 
 class IndexView(web.View):
@@ -17,7 +42,7 @@ class IndexView(web.View):
 
 
 class LoginView(web.View):
-    """Render the login page and manage the user's session."""
+    """Authenticate a user and manage the login session."""
 
     @aiohttp_jinja2.template("login.html")
     async def get(self) -> dict:
@@ -28,13 +53,33 @@ class LoginView(web.View):
 
     async def post(self) -> web.HTTPFound:
         data = await self.request.post()
-        email = data.get("email")
-        password = data.get("password")
+        email = str(data.get("email", "")).strip().lower()
+        password = data.get("password", "")
         if not email or not password:
             raise web.HTTPBadRequest(text="Email and password are required")
+
+        user = await UserModel.get_by_email(
+            self.request.app["db"]._get_pool(), email
+        )
+        if user is None or not verify_password(password, user["password_hash"]):
+            raise web.HTTPUnauthorized(text="Invalid email or password")
+
         session = await get_session(self.request)
-        session["user"] = {"email": str(email)}
+        session.clear()
+        session["user_id"] = int(user["id"])
         return web.HTTPFound(location=self.request.app.router["index"].url_for())
+
+
+class LogoutView(web.View):
+    """Clear the authenticated session and return to the login page."""
+
+    async def get(self) -> web.HTTPFound:
+        session = await get_session(self.request)
+        session.clear()
+        return web.HTTPFound(location=self.request.app.router["login"].url_for())
+
+    async def post(self) -> web.HTTPFound:
+        return await self.get()
 
 
 class SignupView(web.View):
