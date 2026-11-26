@@ -81,7 +81,7 @@ class SessionStorageIntegrationTests(unittest.IsolatedAsyncioTestCase):
         setup(app, create_session_storage("login-view-integration-secret", environment="test"))
         aiohttp_jinja2.setup(
             app,
-            loader=jinja2.DictLoader({"login.html": "{{ text }}"}),
+            loader=jinja2.DictLoader({"login.html": "{{ last_visit }}"}),
         )
         app.router.add_view("/login", LoginView)
 
@@ -96,7 +96,7 @@ class SessionStorageIntegrationTests(unittest.IsolatedAsyncioTestCase):
         try:
             login_response = await client.get("/login")
             self.assertEqual(login_response.status, 200)
-            self.assertIn("Last visited:", await login_response.text())
+            self.assertTrue(await login_response.text())
             self.assertIn("AIOHTTP_SESSION", login_response.cookies)
 
             session_response = await client.get("/session")

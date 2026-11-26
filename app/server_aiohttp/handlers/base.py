@@ -21,18 +21,18 @@ class LoginView(web.View):
         session = await get_session(self.request)
         last_visit = datetime.now(timezone.utc).isoformat()
         session["last_visit"] = last_visit
-        return {"text": f"Login Page\nLast visited: {last_visit}"}
+        return {"last_visit": last_visit}
 
     async def post(self) -> web.HTTPFound:
         data = await self.request.post()
-        login = data.get("login")
+        email = data.get("email")
         password = data.get("password")
 
-        if not login or not password:
-            raise web.HTTPBadRequest(text="Login and password are required")
+        if not email or not password:
+            raise web.HTTPBadRequest(text="Email and password are required")
 
         session = await get_session(self.request)
-        session["user"] = {"login": str(login)}
+        session["user"] = {"email": str(email)}
 
         return web.HTTPFound(
             location=self.request.app.router["index"].url_for()
