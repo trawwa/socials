@@ -1,8 +1,10 @@
+import os
 import unittest
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+import asyncpg
 
 from main import init_db
 from utils.database import Database
