@@ -34,6 +34,8 @@ async def init_db(app: web.Application):
     app["db"] = db
     logger.info("Подключение к PostgreSQL установлено")
     try:
+        await db.apply_schema()
+        logger.info("Схема PostgreSQL применена")
         yield
     finally:
         await db.disconnect()
