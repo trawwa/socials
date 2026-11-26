@@ -12,7 +12,6 @@ from utils.database import Database
 from utils.session import create_session_storage
 
 
-# Настройка логирования ДО создания приложения
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -21,20 +20,24 @@ logger = logging.getLogger(__name__)
 
 
 async def init_db(app: web.Application):
-    """Инициализация подключения к БД при старте."""
+    """Create the PostgreSQL connection pool on startup and close it on cleanup."""
     db = Database(
         host=settings.DB_HOST,
         port=settings.DB_PORT,
         database=settings.DB_NAME,
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
+        min_size=settings.DB_POOL_MIN,
+        max_size=settings.DB_POOL_MAX,
     )
     await db.connect()
     app["db"] = db
     logger.info("Подключение к PostgreSQL установлено")
-    yield
-    await db.disconnect()
-    logger.info("Подключение к PostgreSQL закрыто")
+    try:
+        yield
+    finally:
+        await db.disconnect()
+        logger.info("Подключение к PostgreSQL закрыто")
 
 
 def main():
