@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Optional
 
 import asyncpg
@@ -42,6 +43,14 @@ class Database:
             command_timeout=60,
         )
         return self.pool
+
+    async def apply_schema(self):
+        """Применить идемпотентную начальную SQL-схему к подключённой БД."""
+        schema_path = Path(__file__).resolve().parent.parent / "models" / "schema.sql"
+        schema_sql = schema_path.read_text(encoding="utf-8")
+
+        async with self._get_pool().acquire() as conn:
+            await conn.execute(schema_sql)
 
     async def disconnect(self):
         """Закрыть пул соединений."""
