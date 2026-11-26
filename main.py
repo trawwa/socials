@@ -5,6 +5,7 @@ import jinja2
 from aiohttp import web
 from aiohttp_session import setup
 
+from app.server_aiohttp.handlers.base import session_context_processor
 from app.server_aiohttp.routes.base import setup_routes
 from config.common import BaseConfig
 from config.config import settings
@@ -58,6 +59,7 @@ def main():
             package_name="main",
             package_path="templates",
         ),
+        context_processors=[session_context_processor],
     )
 
     setup_routes(app)
