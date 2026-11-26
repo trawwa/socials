@@ -1,24 +1,25 @@
 <!DOCTYPE html>
-
-<html lang="en">
-
+<html lang="ru">
     <head>
         <meta charset="UTF-8">
-        <title>Login</title>
+        <title>Вход</title>
     </head>
-
     <body>
+        <main>
+            <h1>Вход</h1>
+            {% if last_visit %}
+            <p id="last-visit">Последнее посещение: {{ last_visit }}</p>
+            {% endif %}
+            <form action="/login" method="post" accept-charset="utf-8"
+                  enctype="application/x-www-form-urlencoded">
+                <label for="email">Email</label>
+                <input id="email" name="email" type="email" required autofocus>
 
-        <form action="/login" method="post" accept-charset="utf-8" enctype="application/x-www-form-urlencoded">
-            <label for="login">Login</label>
-            <input id="login" name="login" type="text" value="" autofocus/>
+                <label for="password">Пароль</label>
+                <input id="password" name="password" type="password" required>
 
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" value=""/>
-
-            <input type="submit" value="login"/>
-        </form>
-
+                <button type="submit">Войти</button>
+            </form>
+        </main>
     </body>
-    
 </html>
