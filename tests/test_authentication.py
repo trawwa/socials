@@ -116,7 +116,11 @@ class AuthenticationIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_logout_clears_session_and_redirects_to_login(self):
         await self.client.get("/test-seed")
-        response = await self.client.get("/logout", allow_redirects=False)
+        with patch(
+            "app.server_aiohttp.handlers.base.UserModel.get_by_id",
+            new=AsyncMock(return_value={"id": 42, "email": "person@example.test"}),
+        ):
+            response = await self.client.get("/logout", allow_redirects=False)
         self.assertEqual(response.status, 302)
         self.assertEqual(response.headers["Location"], "/login")
         self.assertEqual(await (await self.client.get("/test-session")).json(), {})
